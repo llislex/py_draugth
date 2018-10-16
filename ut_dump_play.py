@@ -11,11 +11,11 @@ for move in xrange(0, 100):
     print move
     hits = b.hits(player)
     if hits:
-        b.apply_hit(random.choice(hits))
+        b._apply_hit(random.choice(hits))
     else:
         moves = b.moves(player)
         if moves:
-            b.apply_move(random.choice(moves))
+            b._apply_move(random.choice(moves))
         else:
             print "black" if player > 0 else "white", "win"
             break

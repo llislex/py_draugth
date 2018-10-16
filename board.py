@@ -302,7 +302,8 @@ class Board:
                     result.append((n, dst))
         return result
 
-    def apply_move(self, m):
+    # input m - [ from, to]
+    def _apply_move(self, m):
         s = self.dot[m[0]]
         self.set(_empty, m[0])
         if s == _white and m[1] in [1, 2, 3, 4, 5]:
@@ -311,10 +312,17 @@ class Board:
             s = _black_dam
         self.set(s, m[1])
 
-    def apply_hit(self, hit_path):
-        self.apply_move((hit_path[0][0], hit_path[-1][0]))
+    def _apply_hit(self, hit_path):
+        self._apply_move((hit_path[0][0], hit_path[-1][0]))
         for step in hit_path[1:]:
             self.set(_empty, step[1])
+
+    # input m - Move class
+    def apply_move(self, m):
+        if m.hit:
+            self._apply_hit(m.hit)
+        else:
+            self._apply_move(m.move)
 
     def play(self, player):
         hits = self.hits(player)
@@ -323,7 +331,7 @@ class Board:
                 transformed_board = Board()
                 for n in xrange(1, len(self.dot)):
                     transformed_board.dot[n] = self.dot[n]
-                transformed_board.apply_hit(h)
+                transformed_board._apply_hit(h)
                 yield transformed_board, Move(h, None)
         else:
             moves = self.moves(player)
@@ -332,7 +340,7 @@ class Board:
                     transformed_board = Board()
                     for n in xrange(1, len(self.dot)):
                         transformed_board.dot[n] = self.dot[n]
-                    transformed_board.apply_move(m)
+                    transformed_board._apply_move(m)
                     yield transformed_board, Move(None, m)
             else:
                 raise StopIteration()

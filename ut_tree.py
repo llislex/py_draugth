@@ -20,6 +20,11 @@ print '------'
 print tree.search_back(n2, 3)
 print tree.search_back(n2, 1)
 
+print t
+print 'end points:'
+for p in Node.end_points(n):
+    print p
+
 t.remove(n)
 
 print t

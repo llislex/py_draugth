@@ -11,6 +11,19 @@ class Node:
         self.owner.add(n, self)
         return n
 
+    def nodes_number(self):
+        result = 1
+        for c in self.child:
+            result += c.nodes_number()
+        return result
+
+    def end_points(self):
+        if len(self.child) == 0:
+            yield self
+        for c in self.child:
+            for sub_end_point in c.end_points():
+                yield sub_end_point
+
     def __iter__(self):
         it = self
         while it:
@@ -56,6 +69,12 @@ class Tree:
             self.remove(c)
         node = None
 
+    def trim_siblings(self, node):
+        if node.parent:
+            for n in node.parent.child:
+                if n != node:
+                    self.remove(n)
+
     def prn(self, node, level, step):
         st = ''
         if node:
@@ -66,6 +85,9 @@ class Tree:
 
     def __str__(self):
         return self.prn(self.root, 0, 4)
+
+    def nodes_number(self):
+        return self.root.nodes_number()
 
 
 def search_back(node, value, functor=lambda n, v: n.value == v):

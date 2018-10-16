@@ -62,11 +62,11 @@ print b
 
 h = b.hits(1)
 print_hits(h)
-b.apply_hit(h[0])
+b._apply_hit(h[0])
 print b
 '''
 print_moves(b.moves(1))
-b.apply_move(b.moves(1)[0])
+b._apply_move(b.moves(1)[0])
 print b
 '''
 
