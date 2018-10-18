@@ -20,14 +20,13 @@ class MoveWeight:
 
 
 def choose_move(node):
-    print node
     for node1 in node.child:
-        if node.value.weight == node1.value.weight:
+        if node.value.weight <= node1.value.weight:
             print node1.value
             return node1
     print node
     print node.child
-    assert False
+    return None
 
 
 def evaluate_board(board, player):
@@ -63,7 +62,7 @@ def mini(node):
     return result
 
 
-def play_tree_add_ply(root, board, player, min_weight=None):
+def play_tree_add_ply(root, board, player, level=0, level_limit=1, min_weight=None):
     if root.terminal():
         if min_weight is not None:
             if root.value.weight < min_weight:
@@ -72,8 +71,8 @@ def play_tree_add_ply(root, board, player, min_weight=None):
             l1 = root.append(MoveWeight(m0, 999))
             for b1, m1 in b0.play(-player):
                 l2 = l1.append(MoveWeight(m1, -999))
-                if m1.hit:
-                    play_tree_add_ply(l2, b1, player)
+                if m1.hit and level < level_limit:
+                    play_tree_add_ply(l2, b1, player, level + 1)
                 else:
                     e = evaluate_board(b1, player)
                     l2.value.set_weight(e)
@@ -93,8 +92,20 @@ def play_tree_trim(root, min_weight):
 
 
 b = board.Board()
-b.set_white(i for i in xrange(31, 51))
-b.set_black(i for i in xrange(1, 21))
+# b.set_white(i for i in xrange(31, 51))
+# b.set_black(i for i in xrange(1, 21))
+b.load("""
+ x x x x x
+x x x x x 
+ x x x . x
+x x x x x 
+ . . x . .
+. . o . . 
+ o o . o o
+o o o o o 
+ o o o o o
+o o o o o
+""")
 
 player = 1
 cnt = 0
@@ -103,7 +114,11 @@ variants = tree.Tree()
 node = variants.append(MoveWeight(None, 0))
 
 start = time.time()
-play_tree_add_ply(node, b, player)
+play_tree_add_ply(node, b, player, 0, 1)
+evaluation = maxi(node)
+delta = time.time()-start
+print delta, evaluation
+play_tree_add_ply(node, b, player, 0, 1, evaluation)
 evaluation = maxi(node)
 delta = time.time()-start
 print delta
@@ -112,15 +127,22 @@ print '------------------------'
 while True:
     node.value.set_weight(evaluation)
     n1 = choose_move(node)
+    if n1 is None:
+        print "black win"
+        break
     b.apply_move(n1.value.move)
 
-    print variants
+    #print variants
     variants.trim_siblings(n1)
-    print "after trim siblings", variants
+    #print "after trim siblings", variants
     print "evaluation", evaluation
     print "nodes", variants.nodes_number()
     print n1.value.move, n1.value.weight
     print b
+
+    if len(n1.child) == 0:
+        print "white win"
+        break
 
     opponent_move_index = 0
     for no in n1.child:
@@ -129,6 +151,9 @@ while True:
 
     opponent_move_index = input(">")
     n2 = n1.child[opponent_move_index]
+
+    #n2 = random.choice(n1.child)
+
     b.apply_move(n2.value.move)
     variants.trim_siblings(n2)
     print variants.nodes_number(), "end points", variants.end_points_number()
@@ -136,19 +161,16 @@ while True:
     print b
 
     play_tree_trim(n2, evaluation)
-    print variants
+    #print variants
     print "after trim", variants.nodes_number(), "end points", variants.end_points_number()
 
     if n2.terminal():
         play_tree_add_ply(n2, b, player)
         evaluation = maxi(n2)
-    '''
     elif n2.child[0].value.move.move:
-            print "adding ply"
-            play_tree_add_ply(n2, b, player, evaluation)
-            evaluation = maxi(n2)
-            print "evaluation", evaluation
-    '''
+        variants.trim_siblings(n2.child[0])
+        play_tree_add_ply(n2, b, player, 0, 2, evaluation)
+        evaluation = maxi(n2)
 
     node = n2
     node.value.set_weight(n1.value.weight)

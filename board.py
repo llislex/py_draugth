@@ -1,4 +1,5 @@
 import tree
+import re
 
 # board size
 _D = 10
@@ -147,6 +148,13 @@ class Board:
                 else:
                     res += ' '
         return res
+
+    def load(self, text):
+        st = re.sub(r'[^xXoO.]', "", text)
+        dictionary = {'x': _black, 'X': _black_dam, 'o': _white, 'O': _white_dam, '.': _empty}
+        self.clear()
+        for i in xrange(0, len(st)):
+            self.dot[i+1] = dictionary[st[i]]
 
     def dam(self, n):
         return self.dot[n] == _white_dam or self.dot[n] == _black_dam
