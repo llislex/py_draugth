@@ -324,6 +324,14 @@ class Board:
         else:
             self._apply_move(m.move)
 
+    def clone(self, _move=None):
+        transformed_board = Board()
+        for n in xrange(1, len(self.dot)):
+            transformed_board.dot[n] = self.dot[n]
+        if _move is not None:
+            transformed_board.apply_move(_move)
+        return transformed_board
+
     def play(self, player):
         hits = self.hits(player)
         if hits:

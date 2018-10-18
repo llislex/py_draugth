@@ -27,7 +27,7 @@ def choose_move(node):
             return node1
     print node
     print node.child
-    assert false
+    assert False
 
 
 def evaluate_board(board, player):
@@ -40,27 +40,56 @@ def evaluate_board(board, player):
     return result
 
 
-def build_play_tree(node0, brd, player, depth):
-    if depth > 0:
-        max_list = []
-        for b0, m0 in brd.play(player):
-            node1 = node0.append(MoveWeight(m0, 100500))
-            min_list = []
-            for b1, m1 in b0.play(-player):
-                node2 = node1.append(MoveWeight(m1, 2000))
-                new_depth = depth - 1 if m1.move else 1
-                v = build_play_tree(node2, b1, player, new_depth)
-                node2.value.set_weight(v)
-                min_list.append(v)
-            min_value = min(min_list)
-            node1.value.set_weight(min_value)
-            max_list.append(min_value)
-        max_value = max(max_list)
-        node.value.set_weight(max_value)
-        return max_value
-    result = evaluate_board(brd, player)
-    node.value.set_weight(result)
+def maxi(node):
+    if node.terminal():
+        assert(node.value.weight is not None)
+        return node.value.weight
+    result = -1000
+    for child in node.child:
+        v = mini(child)
+        child.value.set_weight(v)
+        result = max(result, v)
     return result
+
+
+def mini(node):
+    if node.terminal():
+        return node.value.weight
+    result = 1000
+    for child in node.child:
+        v = maxi(child)
+        child.value.set_weight(v)
+        result = min(result, v)
+    return result
+
+
+def play_tree_add_ply(root, board, player, min_weight=None):
+    if root.terminal():
+        if min_weight is not None:
+            if root.value.weight < min_weight:
+                return
+        for b0, m0 in board.play(player):
+            l1 = root.append(MoveWeight(m0, 999))
+            for b1, m1 in b0.play(-player):
+                l2 = l1.append(MoveWeight(m1, -999))
+                if m1.hit:
+                    play_tree_add_ply(l2, b1, player)
+                else:
+                    e = evaluate_board(b1, player)
+                    l2.value.set_weight(e)
+    else:
+        for child in root.child:
+            b0 = board.clone(child.value.move)
+            play_tree_add_ply(child, b0, player)
+
+
+def play_tree_trim(root, min_weight):
+    trim_list = []
+    for child in root.child:
+        if child.value.weight < min_weight:
+            trim_list.append(child)
+    for it in trim_list:
+        root.owner.remove(it)
 
 
 b = board.Board()
@@ -74,18 +103,23 @@ variants = tree.Tree()
 node = variants.append(MoveWeight(None, 0))
 
 start = time.time()
-build_play_tree(node, b, player, 2)
+play_tree_add_ply(node, b, player)
+evaluation = maxi(node)
 delta = time.time()-start
 print delta
 print '------------------------'
 
-while len(node.child) > 0:
+while True:
+    node.value.set_weight(evaluation)
     n1 = choose_move(node)
     b.apply_move(n1.value.move)
 
+    print variants
     variants.trim_siblings(n1)
-    print variants.nodes_number()
-    print n1.value.move
+    print "after trim siblings", variants
+    print "evaluation", evaluation
+    print "nodes", variants.nodes_number()
+    print n1.value.move, n1.value.weight
     print b
 
     opponent_move_index = 0
@@ -97,8 +131,26 @@ while len(node.child) > 0:
     n2 = n1.child[opponent_move_index]
     b.apply_move(n2.value.move)
     variants.trim_siblings(n2)
-    print variants.nodes_number()
+    print variants.nodes_number(), "end points", variants.end_points_number()
     print n2.value.move
     print b
+
+    play_tree_trim(n2, evaluation)
+    print variants
+    print "after trim", variants.nodes_number(), "end points", variants.end_points_number()
+
+    if n2.terminal():
+        play_tree_add_ply(n2, b, player)
+        evaluation = maxi(n2)
+    '''
+    elif n2.child[0].value.move.move:
+            print "adding ply"
+            play_tree_add_ply(n2, b, player, evaluation)
+            evaluation = maxi(n2)
+            print "evaluation", evaluation
+    '''
+
     node = n2
     node.value.set_weight(n1.value.weight)
+
+
