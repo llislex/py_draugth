@@ -112,6 +112,21 @@ class Move:
         self.hit = hit
         self.move = move
 
+    @staticmethod
+    def _compare_lists(l1, l2):
+        if l1 is None and l2 is None:
+            return True
+        if l1 is not None and l2 is not None:
+            if len(l1) == len(l2):
+                for i in xrange(0, len(l1)):
+                    if l1[i] != l2[i]:
+                        return False
+                return True
+        return False
+
+    def __eq__(self, other):
+        return self._compare_lists(other.hit, self.hit) and self._compare_lists(other.move, self.move)
+
     def __str__(self):
         st = ""
         if self.hit:
