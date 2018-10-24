@@ -1,6 +1,7 @@
 import random
 import tree
 import time
+import game
 
 max_value = 1000
 
@@ -73,11 +74,10 @@ def add_ply(root, _board, player, depth=1, min_weight=None):
             add_ply(child, b0, player)
 
 
-class MinimaxPlayerA:
+class AI0(game.Player):
     def __init__(self, player):
-        self.player = player
-        self.default_depth = 2
-        self.next_move = None
+        game.Player.__init__(self)
+        self.player = player        # white 1, black -1
         self._board = None
         self.variants = None
         self.root = None
@@ -85,7 +85,6 @@ class MinimaxPlayerA:
     def set_board(self, brd):
         self._board = brd.clone()
         self.variants = tree.Tree()
-        self.root = self.variants.append(MoveWeight(None, evaluate(self._board, self.player)))
 
     def play_tree_trim(self):
         trim_list = []
@@ -96,31 +95,37 @@ class MinimaxPlayerA:
             self.root.owner.remove(it)
 
     def play(self):
-        start_time = time.time()
+        if self.root is None:
+            self.root = self.variants.append(MoveWeight(None, evaluate(self._board, self.player)))
+
+        start_time = time.time()    # debug
+
         self.play_tree_trim()
         if self.root.terminal():
-            add_ply(self.root, self._board, self.player, self.default_depth)
+            add_ply(self.root, self._board, self.player, 2)
         elif self.root.child[0].value.move.move:
             self.variants.trim_siblings(random.choice(self.root.child))
-            add_ply(self.root, self._board, self.player,  self.default_depth, self.root.value.weight)
+            add_ply(self.root, self._board, self.player, 1, self.root.value.weight)
         evaluation = maxi(self.root)
         self.root.value.set_weight(evaluation)
+
         if self.root.terminal():
             return None
-        self.default_depth = 1
-        self.next_move = max(self.root.child, key=lambda x: x.value.weight)
+
+        m = max(self.root.child, key=lambda x: x.value.weight)
+        self._board.apply_move(m.value.move)
+        self.variants.trim_siblings(m)
+        self.root = m
+
+        # debug
         end_time = time.time()
-        print
-        print self.next_move, end_time - start_time, "sec"
-        return self.next_move.value.move
+        print end_time - start_time, "sec"
 
-    def apply_own_move(self):
-        self._board.apply_move(self.next_move.value.move)
-        self.variants.trim_siblings(self.next_move)
+        return m.value.move
 
-    def apply_enemy_move(self, move):
-        n = next(x for x in self.next_move.child if x.value.move == move)
+    def set_opponent_move(self, move):
         self._board.apply_move(move)
-        self.next_move = None
-        self.variants.trim_siblings(n)
-        self.root = n
+        if self.root is not None:
+            n = next(x for x in self.root.child if x.value.move == move)
+            self.variants.trim_siblings(n)
+            self.root = n
