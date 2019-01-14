@@ -214,6 +214,12 @@ class Board:
     def owned_by(self, player, n):
         return self.dot[n] * player > 0
 
+    def units(self, player):
+        for i in xrange(1, len(self.dot)):
+            if self.owned_by(player, i):
+                yield i
+        raise StopIteration()
+
     def hit(self, player, n, direction):
         if len(_way[n][direction]) > 1:
             n1 = _way[n][direction][0]

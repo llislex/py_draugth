@@ -1,4 +1,6 @@
-import board
+import game_board
+import game_rules
+import random
 import tree
 
 def print_hits(variants):
@@ -10,6 +12,59 @@ def print_hits(variants):
 def print_moves(variants):
     for variant in variants:
         print variant[0], "-", variant[1]
+
+
+N = 8
+b = game_board.Board(N)
+
+
+b.load("""
+ . x . .
+. . x .
+ . . . .
+. . . .
+ . . . .
+. . o .
+ . . . .
+. o . .
+""")
+
+
+'''
+b.load("""
+ . . .
+. . . 
+ x . X
+. o o 
+ o . .
+. . . 
+""")
+'''
+print b
+
+print list(b.units(1))
+print list(b.units(-1))
+
+r = game_rules.Rules(N)
+player = -1
+
+
+for i in xrange(0, 5):
+    hits = r.hits(b, player)
+    print i
+    print hits
+    if len(hits) > 0:
+        h = random.choice(hits)
+        r.apply_hit(b, h)
+        print b, h
+    else:
+        moves = r.moves(b, player)
+        print moves
+        if len(moves) > 0:
+            m = random.choice(moves)
+            r.apply_move(b, m)
+            print b, m
+    player = -player
 
 '''
 # ut 1
@@ -51,7 +106,7 @@ print_moves(b.moves(1))
 
 
 # ut 3
-
+'''
 b = board.Board()
 b.set(board._white_dam, 50)
 #b.set_white([46, 47])
@@ -64,6 +119,7 @@ h = b.hits(1)
 print_hits(h)
 b._apply_hit(h[0])
 print b
+'''
 '''
 print_moves(b.moves(1))
 b._apply_move(b.moves(1)[0])
