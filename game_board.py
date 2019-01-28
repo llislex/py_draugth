@@ -15,6 +15,9 @@ class Board:
         self.dot = [empty] * (self._D * self._d + 1)
         self.marker = []
 
+    def size(self):
+        return self._D
+
     # temporary
     def number(self, _col, _row):
         i = _col / 2
