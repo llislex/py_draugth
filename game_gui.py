@@ -1,6 +1,9 @@
 import wx
+import threading
 import game_board
 import game_rules
+import random
+import time
 
 
 def col_index(n, size):
@@ -15,36 +18,86 @@ def col(n, size):
     return col_index(n, size) * 2 + 1 - (row(n, size) % 2)
 
 
+_hit = 1
+_move = 0
+
+_human = 0
+_ai = 1
+
+_black_move = -1
+_white_move = 1
+
+
 class MainForm(wx.Frame):
-    def __init__(self, board, rules, player):
-        wx.Frame.__init__(self, None, pos=(150, 150), size=(350, 350))
-        N = board.size()
+    def __init__(self, board, rules, turn):
+        wx.Frame.__init__(self, None, size=(400, 400))
+        menu_bar = wx.MenuBar()
+        menu = wx.Menu()
+        menu_item = wx.MenuItem(menu, wx.ID_NEW, "New game", "Start a new game")
+        menu.Append(menu_item)
+        menu_bar.Append(menu, '&Game')
+        self.SetMenuBar(menu_bar)
+        self.Bind(wx.EVT_MENU, self.start_new_game, menu_item)
+
         self.num_buttons = board.size() * board.size() / 2
         self.btn = []
         self.selected_btn = []
+        self.move_type = _hit          # 0 - move 1 - hit
         self.move_list = []
         self.step = 0
         sz = self.GetSize()
         for i in xrange(0, self.num_buttons):
-            h = sz[0] / N / 2
-            w = sz[1] / N / 2
+            h = sz[0] / N * 3 / 4
+            w = sz[1] / N * 3 / 4
             x = col(i + 1, N) * w
             y = row(i + 1, N) * h
             btn = wx.Button(self, pos=(x, y), size=(w, h))
             self.btn.append(btn)
-        self.set_board(board, rules, player)
 
-    def set_board(self, board, rules, player):
+        self.current_turn = _white_move
+        self.white_player = _human
+        self.black_player = _human
+        self.board = board
+        self.rules = rules
+        self.start_new_game(None)
+        # self.set_board(board, rules, player)
+
+    def player(self):
+        return self.white_player if self.current_turn == _white_move else self.black_player
+
+    def start_new_game(self, evt):
+        self.Bind(EVT_MOVE, self.on_ai_move)
+        self.current_turn = _white_move
+        self.white_player = _human
+        self.black_player = _ai
+        self.board.load("""
+         x x x x
+        x x x x
+         x x x x
+        . . . .
+         . . . .
+        o o o o
+         o o o o
+        o o o o
+        """)
+        self.set_board(self.board, self.rules, self.current_turn)
+
+    def set_board(self, board, rules, turn):
         lut = {game_board.white: 'o', game_board.white_dam: 'O', game_board.black: 'x', game_board.black_dam: 'X',
                game_board.empty: ' '}
         for i in xrange(0, self.num_buttons):
             self.btn[i].SetLabel(lut[board.dot[i+1]])
         # build move list for the board
-        self.move_list = rules.hits(board, player)
-        if len(self.move_list) == 0:
-            self.move_list = rules.moves(board, player)
-        #
-        self.init_filter()
+        if self.player() == _human:
+            self.move_list = rules.hits(board, turn)
+            self.move_type = _hit
+            if len(self.move_list) == 0:
+                self.move_type = _move
+                self.move_list = rules.moves(board, turn)
+            self.init_filter()
+        else:
+            ai_thread = AI(self, self.board, self.rules, self.current_turn)
+            ai_thread.start()
 
     def _bind_button(self, btn):
         if btn not in self.selected_btn:
@@ -53,32 +106,38 @@ class MainForm(wx.Frame):
 
     def _unbind_buttons(self):
         for btn in self.selected_btn:
-            print "unbind", self.btn.index(btn)
+            # print "unbind", self.btn.index(btn)
             btn.Unbind(wx.EVT_BUTTON)
         self.selected_btn = []
+
+    def _move_place(self, move):
+        if self.move_type == _move:
+            return move[self.step]
+        else:
+            return move[self.step][0]
 
     def init_filter(self):
         self.step = 0
         self.selected_btn = []
         for move in self.move_list:
-            button = self.btn[move[self.step] - 1]
+            button = self.btn[self._move_place(move) - 1]
             self._bind_button(button)
 
     def set_filter(self, point):
         new_list = []
         for move in self.move_list:
             if len(move) > self.step:
-                if move[self.step] == point:
+                if self._move_place(move) == point:
                     new_list.append(move)
         self.move_list = new_list
         self.step += 1
         self._unbind_buttons()
         if not self.done():
             for move in self.move_list:
-                if len(move) > self.step:       #TBD redundant?
-                    num = move[self.step]
+                if len(move) > self.step:
+                    num = self._move_place(move)
                     self._bind_button(self.btn[num - 1])
-                    print "next", num
+                    # print "next", num
 
     def done(self):
         return len(self.move_list) == 1 or len(self.move_list) == 0
@@ -86,10 +145,57 @@ class MainForm(wx.Frame):
     def on_button_click(self, evt):
         target = evt.GetEventObject()
         n = self.btn.index(target) + 1
-        print n, self.btn.index(target)
+        # print n, self.btn.index(target)
         self.set_filter(n)
         if self.done():
-            print "done", self.move_list
+            self._make_move(self.move_type, self.move_list[0])
+
+    def _make_move(self, move_type, a_move):
+        self.current_turn = -self.current_turn
+        if move_type == _hit:
+            self.rules.apply_hit(self.board, a_move)
+        else:
+            self.rules.apply_move(self.board, a_move)
+        self.set_board(self.board, self.rules, self.current_turn)
+
+    def on_ai_move(self, evt):
+        move_type, a_move = evt.GetValue()
+        self._make_move(move_type, a_move)
+
+
+
+class MoveEvent(wx.PyCommandEvent):
+    def __init__(self, value=None):
+        wx.PyCommandEvent.__init__(self, EVT_MOVE_TYPE, -1)
+        self._value = value
+
+    def GetValue(self):
+        return self._value
+
+
+class AI(threading.Thread):
+    def __init__(self, parent, board, rules, turn):
+        threading.Thread.__init__(self)
+        self.parent = parent
+        self.board = board
+        self.rules = rules
+        self.turn = turn
+
+    def run(self):
+        # dumb player
+        move_list = self.rules.hits(self.board, self.turn)
+        move_type = _hit
+        if len(move_list) == 0:
+            move_type = _move
+            move_list = self.rules.moves(self.board, self.turn)
+        if len(move_list) > 0:
+            time.sleep(1)
+            a_move = random.choice(move_list)
+            evt = MoveEvent((move_type, a_move))
+            wx.PostEvent(self.parent, evt)
+        else:
+            # resign
+            pass
 
 
 N = 8
@@ -105,12 +211,13 @@ b.load("""
 . o . .
 """)
 r = game_rules.Rules(N)
-player = -1
+turn = -1
 
-
+EVT_MOVE_TYPE = wx.NewEventType()
+EVT_MOVE = wx.PyEventBinder(EVT_MOVE_TYPE, 1)
 app = wx.App()
 
-form = MainForm(b, r, player)
+form = MainForm(b, r, turn)
 form.Show()
 
 app.MainLoop()
