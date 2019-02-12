@@ -174,9 +174,17 @@ class Rules:
             for h in hit_list:
                 yield h, None
         else:
-            moves_list = self.moves(player)
+            moves_list = self.moves(board, player)
             if len(moves_list):
                 for m in moves_list:
                     yield None, m
             else:
                 raise StopIteration()
+
+    def modify_board(self, board, h, m):
+        b0 = board.clone()
+        if h is not None:
+            self.apply_hit(b0, h)
+        elif m is not None:
+            self.apply_move(b0, m)
+        return b0

@@ -4,6 +4,8 @@ import game_board
 import game_rules
 import random
 import time
+import game_ai_player
+import tree
 
 
 def col_index(n, size):
@@ -70,16 +72,7 @@ class MainForm(wx.Frame):
         self.current_turn = _white_move
         self.white_player = _human
         self.black_player = _ai
-        self.board.load("""
-         x x x x
-        x x x x
-         x x x x
-        . . . .
-         . . . .
-        o o o o
-         o o o o
-        o o o o
-        """)
+        self.board.initial()
         self.set_board(self.board, self.rules, self.current_turn)
 
     def set_board(self, board, rules, turn):
@@ -163,7 +156,6 @@ class MainForm(wx.Frame):
         self._make_move(move_type, a_move)
 
 
-
 class MoveEvent(wx.PyCommandEvent):
     def __init__(self, value=None):
         wx.PyCommandEvent.__init__(self, EVT_MOVE_TYPE, -1)
@@ -173,7 +165,7 @@ class MoveEvent(wx.PyCommandEvent):
         return self._value
 
 
-class AI(threading.Thread):
+class AI0(threading.Thread):
     def __init__(self, parent, board, rules, turn):
         threading.Thread.__init__(self)
         self.parent = parent
@@ -198,20 +190,60 @@ class AI(threading.Thread):
             pass
 
 
+def nodes(root):
+    if root is not None:
+        r = 1
+        for c in root.child:
+            r += nodes(c)
+        return r
+    else:
+        return 0
+
+
+class AI(threading.Thread):
+    def __init__(self, parent, board, rules, turn):
+        threading.Thread.__init__(self)
+        self.parent = parent
+        self.board = board
+        self.rules = rules
+        self.turn = turn
+
+    def run(self):
+        t = tree.Tree()
+        evaluation0 = game_ai_player.evaluate(self.board, self.turn)
+        print evaluation0
+        root = t.append(game_ai_player.MoveWeight(None, evaluation0))
+        t0 = time.time()
+        game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
+
+        if len(root.child) > 0:
+            game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
+            game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
+            t1 = time.time()
+            #game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
+            evaluation2 = game_ai_player.maxi(root)
+            t2 = time.time()
+            print "build tree time", t1 - t0
+            print "eval time", t2 - t1
+            num_nodes = nodes(root)
+            print "nodes", num_nodes
+            print "average time", (t1 - t0) / num_nodes
+
+            m = max(root.child, key=lambda x: x.value.weight)
+            if type(m.value.move[0]) is tuple:
+                evt = MoveEvent((_hit, m.value.move))
+            else:
+                evt = MoveEvent((_move, m.value.move))
+            wx.PostEvent(self.parent, evt)
+        else:
+            # resign
+            pass
+
+
 N = 8
 b = game_board.Board(N)
-b.load("""
- . x . .
-. . x .
- . . . .
-. . . .
- . . . .
-. . o .
- . . . .
-. o . .
-""")
 r = game_rules.Rules(N)
-turn = -1
+turn = 1
 
 EVT_MOVE_TYPE = wx.NewEventType()
 EVT_MOVE = wx.PyEventBinder(EVT_MOVE_TYPE, 1)

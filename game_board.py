@@ -18,7 +18,6 @@ class Board:
     def size(self):
         return self._D
 
-    # temporary
     def number(self, _col, _row):
         i = _col / 2
         return _row * self._d + i + 1
@@ -53,6 +52,14 @@ class Board:
         for n in xrange(1, self._d * self._D + 1):
             self.dot[n] = empty
 
+    def initial(self):
+        self.clear()
+        x = (self._D * self._d -  self._d * 2) / 2
+        for i in xrange(0, x):
+            self.dot[i + 1] = black
+            self.dot[self._D*self._d - i] = white
+
+
     def remove_black(self, n):
         self.dot[n] = empty
 
@@ -73,3 +80,9 @@ class Board:
             if self.owned_by(player, i):
                 yield i
         raise StopIteration()
+
+    def clone(self):
+        b = Board(self.size())
+        for n in xrange(1, self._d * self._D + 1):
+            b.dot[n] = self.dot[n]
+        return b
