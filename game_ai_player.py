@@ -19,7 +19,7 @@ class MoveWeight:
 
 def evaluate(_board, player):
     result = 0
-    for i in xrange(1, len(_board.dot)):
+    for i in xrange(0, len(board.dot)):
         if _board.empty(i):
             continue
         v = 3 if _board.dam(i) else 1
@@ -32,28 +32,27 @@ def add_ply(root, board, rules, turn, depth=1, min_weight=None):
         if min_weight is not None:
             if root.value.weight < min_weight:
                 return
-        for h0, m0 in rules.play(board, turn):
-            b0 = rules.modify_board(board, h0, m0)
-            l1 = root.append(MoveWeight(m0 if h0 is None else h0, 999))
-            for h1, m1 in rules.play(b0,-turn):
-                b1 = rules.modify_board(b0, h1, m1)
-                l2 = l1.append(MoveWeight(m1 if h1 is None else h1, -999))
-                if h1 is not None and depth > 0:
+        for m0 in rules.play(board, turn):
+            b0 = board.clone()
+            rules.apply(b0, turn, m0)
+            l1 = root.append(MoveWeight(m0, 99))
+            for m1 in rules.play(b0,-turn):
+                b1 = board.clone(b0)
+                rules.apply(b1, turn, m1)
+                l2 = l1.append(MoveWeight(m1, -99))
+                if len(m1) > 2 and depth > 0:
                     add_ply(l2, b1, rules, turn, depth - 1)
                 else:
                     e = evaluate(b1, turn)
                     l2.value.set_weight(e)
     else:
         for child in root.child:
-            if type(child.value.move[0]) is tuple:
-                b0 = rules.modify_board(board, child.value.move, None)
-                add_ply(child, b0, rules, turn, depth, min_weight)
-            else:
-                b0 = rules.modify_board(board, None, child.value.move)
-                add_ply(child, b0, rules, turn, depth, min_weight)
+            b0 = board.clone()
+            rules.apply(0, child.value.move)
+            add_ply(child, b0, rules, turn, depth, min_weight)
 
 
-max_value = 1000
+max_value = 100
 
 
 def maxi(node):
@@ -77,3 +76,32 @@ def mini(node):
         child.value.set_weight(v)
         result = min(result, v)
     return result
+
+def indent(level):
+    result = ''
+    for i in xrange(0, level):
+        result += ' '
+    return result
+
+def store_move(move, level):
+    return indent(level)+move+'\n'
+    
+
+def is_hit(move):
+    return len(move) > 2
+    
+num_nodes = 0
+    
+def build_game_tree(root, level, board, rules, turn, depth):
+    #print "build_game_tree", level, depth
+    global num_nodes
+    if depth > 0:
+        for m0 in rules.play(board, turn):
+            b0 = board.clone()
+            rules.apply(b0, turn, m0)
+            new_depth = depth if is_hit(m0) else depth - 1
+            num_nodes = num_nodes + 1
+            root = build_game_tree(root + store_move(m0, level), level + 1, b0, rules, -turn, new_depth)
+    return root
+
+        
