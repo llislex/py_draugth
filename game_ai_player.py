@@ -82,26 +82,29 @@ def indent(level):
     for i in xrange(0, level):
         result += ' '
     return result
+    
+def eval_to_str(eval):
+    assert(eval < 128)
+    if eval < 0:
+        eval += 128
+    assert(eval >= 0)
+    return '%02X ' % eval
 
-def store_move(move, level):
-    return indent(level)+move+'\n'
+def store_move(move, level, eval):
+    return eval_to_str(eval)+indent(level)+move+'\n'
     
 
 def is_hit(move):
     return len(move) > 2
     
-num_nodes = 0
-    
 def build_game_tree(root, level, board, rules, turn, depth):
     #print "build_game_tree", level, depth
-    global num_nodes
     if depth > 0:
         for m0 in rules.play(board, turn):
             b0 = board.clone()
             rules.apply(b0, turn, m0)
             new_depth = depth if is_hit(m0) else depth - 1
-            num_nodes = num_nodes + 1
-            root = build_game_tree(root + store_move(m0, level), level + 1, b0, rules, -turn, new_depth)
+            root = build_game_tree(root + store_move(m0, level, turn*max_value), level + 1, b0, rules, -turn, new_depth)
     return root
 
         

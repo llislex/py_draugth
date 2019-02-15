@@ -5,7 +5,6 @@ import game_rules
 import random
 import time
 import game_ai_player
-import tree
 
 
 def col_index(n, size):

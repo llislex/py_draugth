@@ -1,7 +1,6 @@
 import game_board
 import game_rules
 import random
-import tree
 import game_ai_player
 import time
 import threading
@@ -44,12 +43,15 @@ threads = []
 for mx in rules.play(b, turn):
     bx = b.clone()
     rules.apply(bx, turn, mx)
-    tx = GameTreeBuilder(bx, rules, -turn, mx, 7)
+    a_move = game_ai_player.store_move(mx, 0, game_ai_player.max_value)
+    tx = GameTreeBuilder(bx, rules, -turn, a_move, 1)
     threads.append(tx)
     tx.start()
     
 for tx in threads:
     tx.join()
+    print tx.tree
+    
+for tx in threads:    
     print "tree size", len(tx.tree), "bytes", "took time", tx.tooktime, "sec"
-    print "tree nodes", game_ai_player.num_nodes
     print ""
