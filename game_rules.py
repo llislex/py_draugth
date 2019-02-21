@@ -159,10 +159,11 @@ class Rules:
                 yield dest + _to_str(i)
 
     # input m - [taken_1, move_point_1.. taken_n, move_point_n, move_point_0]
-    def apply(self, board, turn, move):
+    def apply(self, board, move):
         src = _from_str(move[-1])
         dest = _from_str(move[-2])
         state = board.dot[src]
+        turn = 1 if state == 'o' or state == 'O' else -1
         assert(board.owned_by(turn, src))
         board.set('.', src)
         is_become_dam = self._dam_field(turn, dest)

@@ -18,7 +18,7 @@ class GameTreeBuilder(threading.Thread):
 
     def run(self):
         start = time.time()
-        self.tree = game_ai_player.build_game_tree(self.tree, 1, self.board, self.rules, self.turn, self.depth)
+        self.tree = game_ai_player.build_game_tree(self.tree, 2, self.board, self.rules, self.turn, self.depth)
         end = time.time()
         self.tooktime = end - start
 
@@ -26,32 +26,39 @@ N = 8
 b = game_board.Board(N)
 b.initial()
 rules = game_rules.Rules(N)
-
-
-#def build_game_tree(root, level, board, rules, turn, depth):
-'''
-start = time.time()
-st =  game_ai_player.build_game_tree('', 0, b, rules, 1, 8)
-end = time.time()
-print "tree size", len(st), "bytes", "took time", end - start, "sec"
-print "tree nodes", game_ai_player.num_nodes, "average tree size", len(st)/game_ai_player.num_nodes
-print "average move calc time", (end-start) / game_ai_player.num_nodes
-'''
-
+depth = 4
 turn = 1
 threads = []
+game_tree = '0 x 42\n'
 for mx in rules.play(b, turn):
     bx = b.clone()
-    rules.apply(bx, turn, mx)
-    a_move = game_ai_player.store_move(mx, 0, game_ai_player.max_value)
-    tx = GameTreeBuilder(bx, rules, -turn, a_move, 1)
+    rules.apply(bx, mx)
+    a_move = game_ai_player.move_to_str(mx, 1, -game_ai_player.max_value)+'\n'
+    tx = GameTreeBuilder(bx, rules, -turn, a_move, depth-1)
     threads.append(tx)
     tx.start()
     
 for tx in threads:
     tx.join()
-    print tx.tree
+    game_tree += tx.tree
     
 for tx in threads:    
     print "tree size", len(tx.tree), "bytes", "took time", tx.tooktime, "sec"
     print ""
+
+tt0 = time.time()
+game_tree_lines = game_tree.splitlines()
+tt1 = time.time()
+n = game_ai_player.TextNode(game_tree_lines, 0)
+r, move_list = game_ai_player.maxi(n)
+tt2 = time.time()
+print "result", r
+print "split", tt1-tt0, "sec"
+print "minimax", tt2-tt1, "sec"
+
+for move_index in move_list:
+    print game_ai_player.TextNode(game_tree_lines, move_index)
+
+
+for ln in game_tree_lines:
+    print ln

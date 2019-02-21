@@ -30,7 +30,7 @@ _white_move = 1
 
 
 class MainForm(wx.Frame):
-    def __init__(self, board, rules, turn):
+    def __init__(self, board, rules):
         wx.Frame.__init__(self, None, size=(400, 400))
         menu_bar = wx.MenuBar()
         menu = wx.Menu()
@@ -95,7 +95,6 @@ class MainForm(wx.Frame):
 
     def _unbind_buttons(self):
         for btn in self.selected_btn:
-            # print "unbind", self.btn.index(btn)
             btn.Unbind(wx.EVT_BUTTON)
         self.selected_btn = []
 
@@ -126,7 +125,6 @@ class MainForm(wx.Frame):
                 if len(move) > self.step:
                     num = self._move_place(move)
                     self._bind_button(self.btn[num])
-                    # print "next", num
 
     def done(self):
         return len(self.move_list) == 1 or len(self.move_list) == 0
@@ -134,17 +132,17 @@ class MainForm(wx.Frame):
     def on_button_click(self, evt):
         target = evt.GetEventObject()
         n = self.btn.index(target)
-        # print n, self.btn.index(target)
         self.set_filter(n)
         if self.done():
             self._make_move(self.move_list[0])
 
     def _make_move(self, a_move):
-        self.rules.apply(self.board, self.current_turn, a_move)
+        self.rules.apply(self.board, a_move)
         self.current_turn = -self.current_turn
         self.set_board(self.board, self.rules, self.current_turn)
 
     def on_ai_move(self, evt):
+        "ai move"
         a_move = evt.GetValue()
         self._make_move(a_move)
 
@@ -157,8 +155,8 @@ class MoveEvent(wx.PyCommandEvent):
     def GetValue(self):
         return self._value
 
-
-class AI(threading.Thread):
+'''
+class AI0(threading.Thread):
     def __init__(self, parent, board, rules, turn):
         threading.Thread.__init__(self)
         self.parent = parent
@@ -187,9 +185,26 @@ def nodes(root):
         return r
     else:
         return 0
+'''        
+        
+class GameTreeBuilder(threading.Thread):
+    def __init__(self, board, rules, turn, m0, depth):
+        threading.Thread.__init__(self)
+        self.depth = depth
+        self.board = board
+        self.rules = rules
+        self.turn = turn
+        self.tree = m0
+        self.tooktime = 0
+
+    def run(self):
+        start = time.time()
+        self.tree = game_ai_player.build_game_tree(self.tree, 2, self.board, self.rules, self.turn, self.depth)
+        end = time.time()
+        self.tooktime = end - start        
 
 
-class AI1(threading.Thread):
+class AI(threading.Thread):
     def __init__(self, parent, board, rules, turn):
         threading.Thread.__init__(self)
         self.parent = parent
@@ -198,47 +213,49 @@ class AI1(threading.Thread):
         self.turn = turn
 
     def run(self):
-        t = tree.Tree()
-        evaluation0 = game_ai_player.evaluate(self.board, self.turn)
-        print evaluation0
-        root = t.append(game_ai_player.MoveWeight(None, evaluation0))
+        threads = []
+        game_tree = '0 x 0\n'
+        depth = 6
         t0 = time.time()
-        game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
-
-        if len(root.child) > 0:
-            game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
-            game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
-            t1 = time.time()
-            #game_ai_player.add_ply(root, self.board, self.rules, self.turn, 1, None)
-            evaluation2 = game_ai_player.maxi(root)
-            t2 = time.time()
-            print "build tree time", t1 - t0
-            print "eval time", t2 - t1
-            num_nodes = nodes(root)
-            print "nodes", num_nodes
-            print "average time", (t1 - t0) / num_nodes
-
-            m = max(root.child, key=lambda x: x.value.weight)
-            if type(m.value.move[0]) is tuple:
-                evt = MoveEvent((_hit, m.value.move))
-            else:
-                evt = MoveEvent((_move, m.value.move))
+        for mx in self.rules.play(self.board, self.turn):
+            bx = b.clone()
+            self.rules.apply(bx, mx)
+            a_move = game_ai_player.move_to_str(mx, 1, -game_ai_player.max_value)+'\n'
+            tx = GameTreeBuilder(bx, self.rules, -self.turn, a_move, depth-1)
+            threads.append(tx)
+            tx.start()
+        for tx in threads:
+            tx.join()
+            game_tree += tx.tree
+        t1 = time.time()
+        game_tree_lines = game_tree.splitlines()
+        n = game_ai_player.TextNode(game_tree_lines, 0)
+        r, move_list = game_ai_player.maxi(n) if self.turn > 0 else game_ai_player.mini(n)
+        t2 = time.time()
+        for m in move_list:
+            node = game_ai_player.TextNode(game_tree_lines, m)
+        
+        print "minimax", t2-t1, "build tree", t1-t0
+        print "total", t2-t0
+        
+        if len(move_list) > 0:
+            index = random.choice(move_list)
+            node = game_ai_player.TextNode(game_tree_lines, index)
+            evt = MoveEvent(node.move)
             wx.PostEvent(self.parent, evt)
         else:
-            # resign
+            #resign
             pass
-
 
 N = 8
 b = game_board.Board(N)
 r = game_rules.Rules(N)
-turn = 1
 
 EVT_MOVE_TYPE = wx.NewEventType()
 EVT_MOVE = wx.PyEventBinder(EVT_MOVE_TYPE, 1)
 app = wx.App()
 
-form = MainForm(b, r, turn)
+form = MainForm(b, r)
 form.Show()
 
 app.MainLoop()

@@ -79,6 +79,6 @@ class Board:
 
     def clone(self):
         b = Board(self.size)
-        for n in xrange(1, self.size * self.size / 2):
+        for n in xrange(0, self.size * self.size / 2):
             b.dot[n] = self.dot[n]
         return b
