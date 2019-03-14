@@ -6,6 +6,19 @@ import time
 import threading
 
 
+b = game_board.Board()
+b.initial()
+print b
+print list(b.units(True))
+print list(b.units(False))
+
+rules = game_rules.Rules(game_board._n)
+for mx in rules.play(b, True):
+    bx = rules.transformed_board(b, mx)
+    print bx
+    
+
+'''
 class GameTreeBuilder(threading.Thread):
     def __init__(self, board, rules, turn, m0, depth):
         threading.Thread.__init__(self)
@@ -62,3 +75,4 @@ for move_index in move_list:
 
 for ln in game_tree_lines:
     print ln
+'''

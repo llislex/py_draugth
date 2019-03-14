@@ -39,14 +39,15 @@ class TextNode:
             
 def evaluate(_board):
     result = 0
-    for i in xrange(0, len(_board.dot)):
-        if _board.dot[i] == 'o':
+    for i in xrange(0, game_board._N):
+        c = _board.dot(i)
+        if c == 'o':
             result += 1
-        elif _board.dot[i] == 'O':
+        elif c == 'O':
             result += 3
-        elif _board.dot[i] == 'x':
+        elif c == 'x':
             result -= 1
-        elif _board.dot[i] == 'X':
+        elif c == 'X':
             result -= 3
         else:
             continue
@@ -115,17 +116,17 @@ def move_from_str(st):
 def is_hit(move):
     return len(move) > 2
     
-def build_game_tree(root, level, board, rules, turn, depth):
+def build_game_tree(root, level, board, rules, white_turn, depth):
     if depth > 0:
-        for m0 in rules.play(board, turn):
+        for m0 in rules.play(board, white_turn):
             b0 = board.clone()
             rules.apply(b0, m0)
             new_depth = depth if is_hit(m0) else depth - 1
             if new_depth == 0:
                 eval = evaluate(board)
             else:
-                eval = turn*max_value
-            root = build_game_tree(root + move_to_str(m0, level, eval)+'\n', level + 1, b0, rules, -turn, new_depth)
+                eval = max_value if white_turn else -max_value
+            root = build_game_tree(root + move_to_str(m0, level, eval)+'\n', level + 1, b0, rules, not white_turn, new_depth)
     return root
    
 def play_game_tree(board, rules, root_lines, index):

@@ -1,84 +1,113 @@
 import re
 
+_n = 10         #sqrt(_N*2)
+_N = _n * _n / 2
+_mask = [1 << x for x in xrange(0, _N)]
+
 class Board:
-    def __init__(self, size):
-        self.size = size
-        self.dot = ['.'] * (size * size / 2)
+    def __init__(self):
+        self.full = 0
+        self.black = 0
+        self.dam = 0
 
     def dot_index(self, _col, _row):
-        return (_row * self.size + _col) / 2
+        return (_row * _n + _col) / 2
+        
+    def dot(self, n):
+        mask = _mask[n]
+        if self.full & mask == 0:
+            return '.'
+        else:
+            is_dam = self.dam & mask != 0
+            is_black = self.black & mask != 0
+            if is_dam:
+                return 'X' if is_black else 'O'
+            else:
+                return 'x' if is_black else 'o'
 
     #human readable
     def __str__(self):
         res = ''
-        for r in xrange(0, self.size):
+        for r in xrange(0, _n):
             res += '\n'
-            for c in xrange(0, self.size):
+            for c in xrange(0, _n):
                 if (r + c) % 2 == 1:
-                    index = self.dot_index(c, r)
-                    res += self.dot[index]
+                    n = self.dot_index(c, r)
+                    res += self.dot(n)
                 else:
                     res += ' '
-        return res
-        
-    def notation(self):
-        res = ''
-        for r in xrange(0, self.size):
-            res += '\n'
-            for c in xrange(0, self.size):
-                if (r + c) % 2 == 1:
-                    index = self.dot_index(c, r)
-                    res += chr(index + 0x30)
-                else:
-                    res += ' '
+        #res += '\nfull  '+format(self.full, 'b') +'\ndam   '+format(self.dam, 'b') + '\nblack '+format(self.black, 'b')+'\n'                  
         return res
         
     def initial(self):
         self.clear()
-        x = (self.size * self.size / 2 -  self.size) / 2
+        x = (_N - _n) / 2
         for i in xrange(0, x):
-            self.dot[i] = 'x'
-            self.dot[self.size * self.size / 2 - i - 1] = 'o'
+            b_mask = _mask[i]
+            w_mask = _mask[_N - i - 1]
+            self.black |= b_mask
+            self.full |= b_mask | w_mask
 
     def load(self, text):
         st = re.sub(r'[^xXoO.]', "", text)
         self.clear()
-        assert(len(st) == self.size*self.size/2)
+        assert(len(st) == _N)
         for i in xrange(0, len(st)):
-            self.dot[i] = st[i]
+            if st[i] != '.':
+                mask = _mask[i]
+                self.full |= mask
+                if st[i] == 'O' or st[i] == 'X':
+                    self.dam |= mask
+                if st[i] == 'X' or st[i] == 'x':
+                    self.black |= mask 
 
-    def save(self):
-        res = ''
-        for i in xrange(0, self.size * self.size / 2):
-            res += self.dot[i]
-        return res
-
-    def dam(self, n):
-        return self.dot[n] == 'X' or self.dot[n] == 'O'
-
-    def clear(self):
-        self.dot = ['.'] * (self.size * self.size / 2)
-
-    def set(self, state, n):
-        self.dot[n] = state
+    def is_dam(self, n):
+        return self.dam & _mask[n] != 0
+        
+    def is_black(self, n):
+        return self.black & _mask[n] != 0
 
     def empty(self, n):
-        return self.dot[n] == '.'
+        return self.full & _mask[n] == 0        
 
-    def owned_by(self, turn, n):
-        if turn > 0:
-            return self.dot[n] == 'o' or self.dot[n] == 'O'
+    def clear(self):
+        self.full = 0
+        self.dam = 0
+        self.black = 0
+
+    def set(self, n, _white, _dam):
+        m = _mask[n] 
+        self.full |= m
+        if _white:
+            self.black &= ~m
         else:
-            return self.dot[n] == 'x' or self.dot[n] == 'X'
+            self.black |= m
+        if _dam:
+            self.dam |= m
+        else:
+            self.dam &= ~m
+        
+    def set_empty(self, n):
+        self.full &= ~_mask[n]
+
+    def owned_by(self, white_player, n):
+        m = _mask[n]
+        if self.full & m == 0:
+            return False
+        if white_player:
+            return self.black & m == 0
+        else:
+            return self.black & m != 0
 
     def units(self, side):
-        for i in xrange(0, len(self.dot)):
+        for i in xrange(0, _N):
             if self.owned_by(side, i):
                 yield i
         raise StopIteration()
 
     def clone(self):
-        b = Board(self.size)
-        for n in xrange(0, self.size * self.size / 2):
-            b.dot[n] = self.dot[n]
+        b = Board()
+        b.full = self.full
+        b.dam = self.dam
+        b.black = self.black
         return b

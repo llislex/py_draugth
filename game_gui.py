@@ -25,8 +25,8 @@ _move = 0
 _human = 0
 _ai = 1
 
-_black_move = -1
-_white_move = 1
+_black_move = False
+_white_move = True
 
 
 class MainForm(wx.Frame):
@@ -40,7 +40,7 @@ class MainForm(wx.Frame):
         self.SetMenuBar(menu_bar)
         self.Bind(wx.EVT_MENU, self.start_new_game, menu_item)
 
-        self.num_buttons = board.size * board.size / 2
+        self.num_buttons = game_board._N
         self.btn = []
         self.selected_btn = []
         self.move_type = _hit          # 0 - move 1 - hit
@@ -79,7 +79,7 @@ class MainForm(wx.Frame):
             if board.empty(i):
                 self.btn[i].SetLabel(' ')
             else:
-                self.btn[i].SetLabel(board.dot[i])
+                self.btn[i].SetLabel(board.dot(i))
         # build move list for the board
         if self.player() == _human:
             self.move_list = rules.move_list(board, turn)
@@ -138,7 +138,7 @@ class MainForm(wx.Frame):
 
     def _make_move(self, a_move):
         self.rules.apply(self.board, a_move)
-        self.current_turn = -self.current_turn
+        self.current_turn = not self.current_turn
         self.set_board(self.board, self.rules, self.current_turn)
 
     def on_ai_move(self, evt):
@@ -215,13 +215,13 @@ class AI(threading.Thread):
     def run(self):
         threads = []
         game_tree = '0 x 0\n'
-        depth = 6
+        depth = 4
         t0 = time.time()
         for mx in self.rules.play(self.board, self.turn):
             bx = b.clone()
             self.rules.apply(bx, mx)
             a_move = game_ai_player.move_to_str(mx, 1, -game_ai_player.max_value)+'\n'
-            tx = GameTreeBuilder(bx, self.rules, -self.turn, a_move, depth-1)
+            tx = GameTreeBuilder(bx, self.rules, not self.turn, a_move, depth-1)
             threads.append(tx)
             tx.start()
         for tx in threads:
@@ -230,7 +230,7 @@ class AI(threading.Thread):
         t1 = time.time()
         game_tree_lines = game_tree.splitlines()
         n = game_ai_player.TextNode(game_tree_lines, 0)
-        r, move_list = game_ai_player.maxi(n) if self.turn > 0 else game_ai_player.mini(n)
+        r, move_list = game_ai_player.maxi(n) if self.turn else game_ai_player.mini(n)
         t2 = time.time()
         for m in move_list:
             node = game_ai_player.TextNode(game_tree_lines, m)
@@ -247,8 +247,8 @@ class AI(threading.Thread):
             #resign
             pass
 
-N = 8
-b = game_board.Board(N)
+N = game_board._n
+b = game_board.Board()
 r = game_rules.Rules(N)
 
 EVT_MOVE_TYPE = wx.NewEventType()
