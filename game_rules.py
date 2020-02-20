@@ -9,25 +9,25 @@ _vector = [[-1, 1], [1, 1], [-1, -1], [1, -1]]
 
 class BoardGeometry:
     def __init__(self, size):
-        self.d = size / 2
+        self.d = size // 2
         self.D = size
         assert(size >= 4)
         assert(size % 2 == 0)
         
     def fields(self):
-        return self.D * self.D / 2
+        return self.D * self.D // 2
 
     def col_index(self, n):
         return n % self.d
 
     def row(self, n):
-        return n / self.d
+        return n // self.d
 
     def col(self, n):
         return self.col_index(n) * 2 + 1 - (self.row(n) % 2)
 
     def number(self, _col, _row):
-        i = _col / 2
+        i = _col // 2
         return _row * self.d + i
 
     def near(self, n, direction):
@@ -52,10 +52,10 @@ class Rules:
         g = BoardGeometry(board_size)
         self.fields = g.fields()
         self.way = []
-        for i in xrange(0, g.fields()):
+        for i in range(0, g.fields()):
             self.way.append([g.near(i, 0), g.near(i, 1), g.near(i, 2), g.near(i, 3)])
-        self.dam_target_white = [i for i in xrange(0, g.d)]
-        self.dam_target_black = [g.d * g.D - i - 1 for i in xrange(0, g.d)]
+        self.dam_target_white = [i for i in range(0, g.d)]
+        self.dam_target_black = [g.d * g.D - i - 1 for i in range(0, g.d)]
         
     def _valid(self, n):
         return n < self.fields
@@ -169,7 +169,7 @@ class Rules:
         is_dam |= self._dam_field(color, dest)
         if(len(move) > 2):
             assert((len(move) % 2) == 1)
-            for i in xrange(0, (len(move) - 1) / 2):
+            for i in range(0, (len(move) - 1) // 2):
                 x = _from_str(move[i*2])
                 board.set_empty(x) #empty taken units
                 #russian dam rules

@@ -1,8 +1,8 @@
 import re
 
-_n = 10         #sqrt(_N*2)
-_N = _n * _n / 2
-_mask = [1 << x for x in xrange(0, _N)]
+_n = 8         #sqrt(_N*2)
+_N = _n * _n // 2
+_mask = [1 << x for x in range(0, _N)]
 
 class Board:
     def __init__(self):
@@ -11,7 +11,7 @@ class Board:
         self.dam = 0
 
     def dot_index(self, _col, _row):
-        return (_row * _n + _col) / 2
+        return (_row * _n + _col) // 2
         
     def dot(self, n):
         mask = _mask[n]
@@ -28,9 +28,9 @@ class Board:
     #human readable
     def __str__(self):
         res = ''
-        for r in xrange(0, _n):
+        for r in range(0, _n):
             res += '\n'
-            for c in xrange(0, _n):
+            for c in range(0, _n):
                 if (r + c) % 2 == 1:
                     n = self.dot_index(c, r)
                     res += self.dot(n)
@@ -41,8 +41,8 @@ class Board:
         
     def initial(self):
         self.clear()
-        x = (_N - _n) / 2
-        for i in xrange(0, x):
+        x = (_N - _n) // 2
+        for i in range(0, x):
             b_mask = _mask[i]
             w_mask = _mask[_N - i - 1]
             self.black |= b_mask
@@ -52,7 +52,7 @@ class Board:
         st = re.sub(r'[^xXoO.]', "", text)
         self.clear()
         assert(len(st) == _N)
-        for i in xrange(0, len(st)):
+        for i in range(0, len(st)):
             if st[i] != '.':
                 mask = _mask[i]
                 self.full |= mask
@@ -100,10 +100,9 @@ class Board:
             return self.black & m != 0
 
     def units(self, side):
-        for i in xrange(0, _N):
+        for i in range(0, _N):
             if self.owned_by(side, i):
                 yield i
-        raise StopIteration()
 
     def clone(self):
         b = Board()

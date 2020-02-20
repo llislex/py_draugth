@@ -39,7 +39,7 @@ class TextNode:
             
 def evaluate(_board):
     result = 0
-    for i in xrange(0, game_board._N):
+    for i in range(0, game_board._N):
         c = _board.dot(i)
         if c == 'o':
             result += 1
@@ -92,7 +92,7 @@ def mini(node):
     
 def indent(level):
     result = ''
-    for i in xrange(1, level):
+    for i in range(1, level):
         result += ' '
     return result
     
@@ -108,7 +108,7 @@ def move_from_str(st):
         l = int(m.group(1))
         m = m.group(2)
         return l, m, w
-    print st
+    print(st)
     assert(False)
     return None, None, None
     
