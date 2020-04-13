@@ -190,18 +190,19 @@ def nodes(root):
 
 
 class GameTreeBuilder(threading.Thread):
-    def __init__(self, board, rules, turn, m0, depth):
+    def __init__(self, move, board, rules, turn, depth):
         threading.Thread.__init__(self)
         self.depth = depth
         self.board = board
+        self.move = move
         self.rules = rules
         self.turn = turn
-        self.tree = m0
         self.tooktime = 0
+        self.evaluation = 0
 
     def run(self):
         start = time.time()
-        self.tree = game_ai_player.build_game_tree(self.tree, 2, self.board, self.rules, self.turn, self.depth)
+        self.evaluation = game_ai_player.build_game_tree(self.board, self.rules, self.turn, self.depth)
         end = time.time()
         self.tooktime = end - start
 
@@ -216,34 +217,29 @@ class AI(threading.Thread):
 
     def run(self):
         threads = []
-        game_tree = '0 x 0\n'
-        depth = 4
+        depth = 5
         t0 = time.time()
         for mx in self.rules.play(self.board, self.turn):
             bx = b.clone()
             self.rules.apply(bx, mx)
-            a_move = game_ai_player.move_to_str(mx, 1, -game_ai_player.max_value) + '\n'
-            tx = GameTreeBuilder(bx, self.rules, not self.turn, a_move, depth - 1)
+            tx = GameTreeBuilder(mx, bx, self.rules, not self.turn, depth - 1)
             threads.append(tx)
             tx.start()
         for tx in threads:
             tx.join()
-            game_tree += tx.tree
         t1 = time.time()
-        game_tree_lines = game_tree.splitlines()
-        n = game_ai_player.TextNode(game_tree_lines, 0)
-        r, move_list = game_ai_player.maxi(n) if self.turn else game_ai_player.mini(n)
-        t2 = time.time()
-        for m in move_list:
-            node = game_ai_player.TextNode(game_tree_lines, m)
+        print("build tree", t1 - t0, "depth", depth)
 
-        print("minimax", t2 - t1, "build tree", t1 - t0)
-        print("total", t2 - t0)
+        if len(threads) > 0:
+            e = max(threads, key=lambda item: item.evaluation) if self.turn else min(threads, key=lambda item: item.evaluation)
+            for tx in threads:
+                print(tx.board)
+                print(tx.evaluation, tx.move)
+            print(e.evaluation)
+            best_move_threads = list(filter(lambda x: x.evaluation == e.evaluation, threads))
+            best_tx = random.choice(best_move_threads)
 
-        if len(move_list) > 0:
-            index = random.choice(move_list)
-            node = game_ai_player.TextNode(game_tree_lines, index)
-            evt = MoveEvent(node.move)
+            evt = MoveEvent(best_tx.move)
             wx.PostEvent(self.parent, evt)
         else:
             # resign

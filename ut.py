@@ -8,15 +8,25 @@ import threading
 
 b = game_board.Board()
 b.initial()
-print b
-print list(b.units(True))
-print list(b.units(False))
+rules = game_rules.Rules(game_board._n)
+print(b)
+
+depth = 2
+e, moves = game_ai_player.get_evaluated_moves(b, rules, True, depth)
+
+for b0, m0, evaluation in moves:
+    print(b0)
+    print('move',m0,'eval',evaluation)
+
+'''
+print(list(b.units(True)))
+print(list(b.units(False)))
 
 rules = game_rules.Rules(game_board._n)
 for mx in rules.play(b, True):
     bx = rules.transformed_board(b, mx)
-    print bx
-    
+    print(bx)
+'''   
 
 '''
 class GameTreeBuilder(threading.Thread):
