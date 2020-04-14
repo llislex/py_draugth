@@ -49,10 +49,13 @@ class MainForm(wx.Frame):
         sz = self.GetSize()
         h = 3 * sz[0] // N // 4
         w = 3 * sz[1] // N // 4
+
+        #font = wx.Font(14, wx.SWISS, wx.BOLD)
         for i in range(0, self.num_buttons):
             x = col(i + 1, N) * w
             y = row(i + 1, N) * h
             btn = wx.Button(self, pos=(x, y), size=(w, h))
+            btn.SetFont(btn.GetFont().MakeLarger().MakeLarger())
             self.btn.append(btn)
 
         self.current_turn = _white_move
@@ -214,6 +217,7 @@ class AI(threading.Thread):
         self.board = board
         self.rules = rules
         self.turn = turn
+        random.seed()
 
     def run(self):
         threads = []
