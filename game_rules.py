@@ -1,6 +1,3 @@
-import game_board
-
-
 _backward = [0, 1]
 _forward = [2, 3]
 _all_directions = [0, 1, 2, 3]
@@ -98,9 +95,9 @@ class Rules:
         if len(dirs) == 0:
             yield way
         for d in dirs:
-            n1 =_from_str(res[d][1])
+            n1 = _from_str(res[d][1])
             way_generator = self._hit_dam_way if self._dam_field(white_turn, n1) else self._hit_way  # russian rule
-            #way_generator = self._hit_way                                         # international rule
+            # way_generator = self._hit_way                                         # international rule
             for a_way in way_generator(board, white_turn, n1, way + res[d]):
                 yield a_way
 
@@ -137,7 +134,6 @@ class Rules:
                 if len(r) > 0:
                     yield r + _to_str(i)
 
-            
     def _move(self, board, white_turn, n):
         directions = _forward if white_turn else _backward
         for d in directions:
@@ -167,22 +163,20 @@ class Rules:
         assert(not board.empty(src))
         board.set_empty(src)
         is_dam |= self._dam_field(color, dest)
-        if(len(move) > 2):
+        if len(move) > 2:
             assert((len(move) % 2) == 1)
             for i in range(0, (len(move) - 1) // 2):
                 x = _from_str(move[i*2])
-                board.set_empty(x) #empty taken units
-                #russian dam rules
+                board.set_empty(x)  # empty taken units
+                # russian dam rules
                 y = _from_str(move[i*2+1])
                 is_dam |= self._dam_field(color, y)
         board.set(dest, color, is_dam)
-        
-        
+
     def transformed_board(self, board, move):
         b = board.clone()
         self.apply(b, move)
         return b
-
 
     def play(self, board, white_turn):
         no_hit = True

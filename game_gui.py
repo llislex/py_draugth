@@ -50,7 +50,6 @@ class MainForm(wx.Frame):
         h = 3 * sz[0] // N // 4
         w = 3 * sz[1] // N // 4
 
-        #font = wx.Font(14, wx.SWISS, wx.BOLD)
         for i in range(0, self.num_buttons):
             x = col(i + 1, N) * w
             y = row(i + 1, N) * h
@@ -145,7 +144,7 @@ class MainForm(wx.Frame):
         self.set_board(self.board, self.rules, self.current_turn)
 
     def on_ai_move(self, evt):
-        "ai move"
+        #"ai move"
         a_move = evt.GetValue()
         self._make_move(a_move)
 
