@@ -4,15 +4,20 @@ _n = 8         #sqrt(_N*2)
 _N = _n * _n // 2
 _mask = [1 << x for x in range(0, _N)]
 
-class Board:
-    def __init__(self):
-        self.full = 0
-        self.black = 0
-        self.dam = 0
 
-    def dot_index(self, _col, _row):
-        return (_row * _n + _col) // 2
-        
+def dot_index(_col, _row):
+    return (_row * _n + _col) // 2
+
+
+class Board:
+    __slots__ = ['full','black','dam']
+
+    def __init__(self):
+        self.full = 0  # bitmap: bit[i] == 1 - a dot not empty, i = 0 .. _N -1
+        self.black = 0 # bitmap: bit[i] == 1 - a dot is black
+        self.dam = 0   # bitmap: bit[i] == 1 - a dot is dam
+
+    # return dot symbol at specified position "." - empty, o - white, O - white dam, x - black, X - black dam
     def dot(self, n):
         mask = _mask[n]
         if self.full & mask == 0:
@@ -25,18 +30,18 @@ class Board:
             else:
                 return 'x' if is_black else 'o'
 
-    #human readable
+    # board as human readable string
     def __str__(self):
         res = ''
         for r in range(0, _n):
             res += '\n'
             for c in range(0, _n):
                 if (r + c) % 2 == 1:
-                    n = self.dot_index(c, r)
+                    n = dot_index(c, r)
                     res += self.dot(n)
                 else:
                     res += ' '
-        #res += '\nfull  '+format(self.full, 'b') +'\ndam   '+format(self.dam, 'b') + '\nblack '+format(self.black, 'b')+'\n'                  
+        #res += '\nfull  '+format(self.full, 'b') +'\ndam   '+format(self.dam, 'b') + '\nblack '+format(self.black, 'b')+'\n'
         return res
         
     def initial(self):
