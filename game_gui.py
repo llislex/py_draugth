@@ -3,6 +3,7 @@ import threading
 import game_board
 import game_rules
 import random
+import copy
 import time
 import game_ai_player
 
@@ -223,7 +224,7 @@ class AI(threading.Thread):
         depth = 5
         t0 = time.time()
         for mx in self.rules.play(self.board, self.turn):
-            bx = b.clone()
+            bx = copy.deepcopy(b) #b.clone()
             self.rules.apply(bx, mx)
             tx = GameTreeBuilder(mx, bx, self.rules, not self.turn, depth - 1)
             threads.append(tx)

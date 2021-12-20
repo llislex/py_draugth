@@ -1,8 +1,8 @@
 import re
 
-_n = 8         #sqrt(_N*2)
-_N = _n * _n // 2
-_mask = [1 << x for x in range(0, _N)]
+_n = 8         # sqrt(_N*2)  board size _n * _n
+_N = _n * _n // 2  # number of fields on the board ('dots')
+_mask = [1 << x for x in range(0, _N)] # bit mask of each dot in the board
 
 
 def dot_index(_col, _row):
@@ -104,6 +104,7 @@ class Board:
         else:
             return self.black & m != 0
 
+    # side - white == True or black == False
     def units(self, side):
         for i in range(0, _N):
             if self.owned_by(side, i):
