@@ -205,7 +205,9 @@ class GameTreeBuilder(threading.Thread):
 
     def run(self):
         start = time.time()
-        self.evaluation = game_ai_player.build_game_tree(self.board, self.rules, self.turn, self.depth)
+        alpha = -game_ai_player.max_value
+        beta = game_ai_player.max_value
+        self.evaluation = game_ai_player.negamax(self.board, self.rules, self.turn, self.depth, alpha, beta)
         end = time.time()
         self.tooktime = end - start
 
@@ -221,32 +223,38 @@ class AI(threading.Thread):
 
     def run(self):
         threads = []
-        depth = 5
+        depth = 9
         t0 = time.time()
-        for mx in self.rules.play(self.board, self.turn):
-            bx = copy.deepcopy(b) #b.clone()
-            self.rules.apply(bx, mx)
-            tx = GameTreeBuilder(mx, bx, self.rules, not self.turn, depth - 1)
-            threads.append(tx)
-            tx.start()
-        for tx in threads:
-            tx.join()
-        t1 = time.time()
-        print("build tree", t1 - t0, "depth", depth)
-
-        if len(threads) > 0:
-            e = max(threads, key=lambda item: item.evaluation) if self.turn else min(threads, key=lambda item: item.evaluation)
+        moves = self.rules.move_list(self.board, self.turn)
+        if len(moves) > 1:
+            for mx in moves:
+                bx = copy.deepcopy(b) #b.clone()
+                self.rules.apply(bx, mx)
+                tx = GameTreeBuilder(mx, bx, self.rules, not self.turn, depth - 1)
+                threads.append(tx)
+                tx.start()
             for tx in threads:
-                print(tx.board)
-                print(tx.evaluation, tx.move)
-            print(e.evaluation)
-            best_move_threads = list(filter(lambda x: x.evaluation == e.evaluation, threads))
-            best_tx = random.choice(best_move_threads)
+                tx.join()
+            t1 = time.time()
+            if len(threads) > 0:
+                e = max(threads, key=lambda item: item.evaluation) if self.turn else min(threads, key=lambda item: item.evaluation)
+                for tx in threads:
+                    print(tx.board)
+                    print("eval ", tx.evaluation, "move ", tx.move)
+                print(e.evaluation)
+                best_move_threads = list(filter(lambda x: x.evaluation == e.evaluation, threads))
+                best_tx = random.choice(best_move_threads)
 
-            evt = MoveEvent(best_tx.move)
+                evt = MoveEvent(best_tx.move)
+                wx.PostEvent(self.parent, evt)
+                print("build tree", t1 - t0, "depth", depth)
+            else:
+                # resign
+                pass
+        elif len(moves) == 1:
+            evt = MoveEvent(moves[0])
             wx.PostEvent(self.parent, evt)
         else:
-            # resign
             pass
 
 

@@ -10,13 +10,7 @@ b = game_board.Board()
 b.initial()
 rules = game_rules.Rules(game_board._n)
 print(b)
-
 depth = 2
-e, moves = game_ai_player.get_evaluated_moves(b, rules, True, depth)
-
-for b0, m0, evaluation in moves:
-    print(b0)
-    print('move',m0,'eval',evaluation)
 
 '''
 print(list(b.units(True)))
