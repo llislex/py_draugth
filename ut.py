@@ -8,15 +8,26 @@ import threading
 
 b = game_board.Board()
 b.initial()
+b.load(" . . . ."
+       ". . . . "
+       " . . . ."
+       ". . . . "
+       " x . . ."
+       ". . . . "
+       " . . . ."
+       ". . o . ")
 rules = game_rules.Rules(game_board._n)
 print(b)
 
-depth = 2
-e, moves = game_ai_player.get_evaluated_moves(b, rules, True, depth)
+depth = 4
+alpha = -game_ai_player.max_value
+beta = game_ai_player.max_value
+e, moves = game_ai_player.get_evaluated_moves(b, rules, True, depth, alpha, beta)
 
 for b0, m0, evaluation in moves:
     print(b0)
-    print('move',m0,'eval',evaluation)
+    print('move', m0, 'eval', evaluation)
+    
 
 '''
 print(list(b.units(True)))

@@ -205,9 +205,12 @@ class GameTreeBuilder(threading.Thread):
 
     def run(self):
         start = time.time()
-        self.evaluation = game_ai_player.build_game_tree(self.board, self.rules, self.turn, self.depth)
+        a = -game_ai_player.max_value
+        self.evaluation = game_ai_player.build_game_tree(self.board, self.rules, self.turn, self.depth, a, -a)
         end = time.time()
         self.tooktime = end - start
+        print("eval", self.evaluation)
+        print("took time ", self.tooktime)
 
 
 class AI(threading.Thread):
@@ -232,7 +235,6 @@ class AI(threading.Thread):
         for tx in threads:
             tx.join()
         t1 = time.time()
-        print("build tree", t1 - t0, "depth", depth)
 
         if len(threads) > 0:
             e = max(threads, key=lambda item: item.evaluation) if self.turn else min(threads, key=lambda item: item.evaluation)
@@ -248,6 +250,7 @@ class AI(threading.Thread):
         else:
             # resign
             pass
+        print("build tree", t1 - t0, "depth", depth)
 
 
 N = game_board._n
