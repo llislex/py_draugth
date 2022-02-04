@@ -30,18 +30,55 @@ class Board:
             else:
                 return 'x' if is_black else 'o'
 
-    # board as human readable string
+    def __eq__(self, d):
+        return self.full == d.full and self.black == d.black and self.dam == d.dam
+
+    # board as human-readable string
     def __str__(self):
-        res = ''
+        res = ""
         for r in range(0, _n):
-            res += '\n'
             for c in range(0, _n):
                 if (r + c) % 2 == 1:
                     n = dot_index(c, r)
                     res += self.dot(n)
                 else:
                     res += ' '
-        #res += '\nfull  '+format(self.full, 'b') +'\ndam   '+format(self.dam, 'b') + '\nblack '+format(self.black, 'b')+'\n'
+            if r != _n - 1:
+                res += '\n'
+        return res
+
+        # board as human-readable string
+
+    def debug_print(self):
+        res = "b.load("  # dbg
+        for r in range(0, _n):
+            res += '\"'  # dbg
+            for c in range(0, _n):
+                if (r + c) % 2 == 1:
+                    n = dot_index(c, r)
+                    res += self.dot(n)
+                else:
+                    res += ' '
+            res += '\"'  # dbg
+            res += '\n' if r != _n - 1 else ')'
+            res += "       " if r != _n - 1 else ""  # dbg
+        return res
+
+    # board notation human-readable
+    @staticmethod
+    def notation():
+        res = "b.load("  # dbg
+        for r in range(0, _n):
+            res += '\"'  # dbg
+            for c in range(0, _n):
+                if (r + c) % 2 == 1:
+                    n = dot_index(c, r)
+                    res += chr(n + 0x30)
+                else:
+                    res += ' '
+            res += '\"'  # dbg
+            res += '\n' if r != _n - 1 else ')'
+            res += "       " if r != _n - 1 else "" # dbg
         return res
         
     def initial(self):

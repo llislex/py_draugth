@@ -2,6 +2,7 @@ _backward = [0, 1]
 _forward = [2, 3]
 _all_directions = [0, 1, 2, 3]
 _vector = [[-1, 1], [1, 1], [-1, -1], [1, -1]]
+_opposite_direction = [3, 2, 1, 0]
 
 
 class BoardGeometry:
@@ -97,7 +98,7 @@ class Rules:
         for d in dirs:
             n1 = _from_str(res[d][1])
             way_generator = self._hit_dam_way if self._dam_field(white_turn, n1) else self._hit_way  # russian rule
-            # way_generator = self._hit_way                                         # international rule
+            # way_generator = self.unit_hit_way                                         # international rule
             for a_way in way_generator(board, white_turn, n1, way + res[d]):
                 yield a_way
 
@@ -130,7 +131,9 @@ class Rules:
     def hits(self, board, white_turn):
         for i in board.units(white_turn):
             way_gen = self._hit_dam_way if board.is_dam(i) else self._hit_way
-            for r in way_gen(board, white_turn, i, ""):
+            bx = board.clone()
+            bx.set_empty(i)
+            for r in way_gen(bx, white_turn, i, ""):
                 if len(r) > 0:
                     yield r + _to_str(i)
 
@@ -151,18 +154,18 @@ class Rules:
     def moves(self, board, white_turn):
         for i in board.units(white_turn):
             way_gen = self._dam_move if board.is_dam(i) else self._move
-            for dest in way_gen(board, white_turn, i):
-                yield dest + _to_str(i)
+            for dst in way_gen(board, white_turn, i):
+                yield dst + _to_str(i)
 
-    # input m - [taken_1, move_point_1.. taken_n, move_point_n, move_point_0]
+    # input m - [taken_1, move_point_1 ... taken_n, move_point_n, move_point_0]
     def apply(self, board, move):
         src = _from_str(move[-1])
-        dest = _from_str(move[-2])
+        dst = _from_str(move[-2])
         is_dam = board.is_dam(src)
         color = not board.is_black(src)
         assert(not board.empty(src))
         board.set_empty(src)
-        is_dam |= self._dam_field(color, dest)
+        is_dam |= self._dam_field(color, dst)
         if len(move) > 2:
             assert((len(move) % 2) == 1)
             for i in range(0, (len(move) - 1) // 2):
@@ -171,7 +174,7 @@ class Rules:
                 # russian dam rules
                 y = _from_str(move[i*2+1])
                 is_dam |= self._dam_field(color, y)
-        board.set(dest, color, is_dam)
+        board.set(dst, color, is_dam)
 
     def transformed_board(self, board, move):
         b = board.clone()

@@ -5,20 +5,50 @@ import game_ai_player
 import time
 import threading
 
-
+# UT dam hit
 b = game_board.Board()
 b.initial()
-b.load(" . . . ."
-       ". . . . "
-       " . . . ."
-       ". . . . "
-       " x . . ."
-       ". . . . "
-       " . . . ."
-       ". . o . ")
+b.load(" . O . ."  
+       ". x x . "  
+       " . . . ."  
+       ". x x . "  
+       " . . . ."  
+       ". . . . "  
+       " . . . ."  
+       ". . . . ")
 rules = game_rules.Rules(game_board._n)
 print(b)
 
+for mx in rules.play(b, True):
+    print(mx)
+    bx = rules.transformed_board(b, mx)
+    print(bx)
+# end of UT dam hit
+
+
+# UT dam hit 2
+'''
+b = game_board.Board()
+b.initial()
+b.load( "  .  .  .  ."
+        ".  .  .  .  "
+        "  .  .  .  ."
+        ".  x  x  .  "
+        "  .  x  .  O"
+        ".  .  x  x  "
+        "  .  x  .  ."
+        ".  .  .  .  ")
+rules = game_rules.Rules(game_board._n)
+print(b)
+
+for mx in rules.play(b, True):
+    print(mx)
+    bx = rules.transformed_board(b, mx)
+    print(bx)
+'''
+# end of UT dam hit 2
+
+'''
 depth = 4
 alpha = -game_ai_player.max_value
 beta = game_ai_player.max_value
@@ -27,6 +57,7 @@ e, moves = game_ai_player.get_evaluated_moves(b, rules, True, depth, alpha, beta
 for b0, m0, evaluation in moves:
     print(b0)
     print('move', m0, 'eval', evaluation)
+'''
     
 
 '''
